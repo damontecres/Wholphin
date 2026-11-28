@@ -58,12 +58,15 @@ import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ServerReportService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.AspectRatios
+import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.cards.BannerCardWithTitle
 import com.github.damontecres.wholphin.ui.cards.ExtrasRow
 import com.github.damontecres.wholphin.ui.cards.ItemRow
+import com.github.damontecres.wholphin.ui.cards.SeasonCard
 import com.github.damontecres.wholphin.ui.components.ContextMenu
+import com.github.damontecres.wholphin.ui.components.ContextMenuActions
 import com.github.damontecres.wholphin.ui.components.ContextMenuDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.GenreText
@@ -76,6 +79,7 @@ import com.github.damontecres.wholphin.ui.data.AddPlaylistViewModel
 import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
@@ -92,6 +96,7 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -102,8 +107,10 @@ import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.libraryApi
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import org.jellyfin.sdk.model.api.UserItemDataDto
 import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import org.jellyfin.sdk.model.api.request.GetSimilarItemsRequest
+import timber.log.Timber
 import java.util.UUID
 
 @HiltViewModel(assistedFactory = AlbumViewModel.Factory::class)
@@ -133,7 +140,7 @@ class AlbumViewModel
             ): AlbumViewModel
         }
 
-        private val _state = MutableStateFlow(AlbumState.EMPTY)
+        private val _state = MutableStateFlow(AlbumState())
         val state: StateFlow<AlbumState> = _state
 
         val currentMusic = musicService.state
@@ -186,6 +193,23 @@ class AlbumViewModel
                         )
                     }
                     updateBackDrop()
+
+                    viewModelScope.launchIO {
+                        try {
+                            val collections =
+                                api.libraryApi
+                                    .getItemCollections(
+                                        itemId = itemId,
+                                        fields = SlimItemFields,
+                                    ).toBaseItems()
+                            _state.update { it.copy(collections = collections) }
+                        } catch (ex: CancellationException) {
+                            throw ex
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error fetching collections for album %s", itemId)
+                        }
+                    }
+
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
                             val similar =
@@ -249,13 +273,17 @@ class AlbumViewModel
             itemId: UUID,
             favorite: Boolean,
         ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
-            favoriteWatchManager.setFavorite(itemId, favorite)
-            val album =
-                api.libraryApi
-                    .getItem(itemId = itemId)
-                    .content
-                    .let { BaseItem(it, false) }
-            _state.update { it.copy(album = album) }
+            val result = favoriteWatchManager.setFavorite(itemId, favorite)
+            if (itemId == this@AlbumViewModel.itemId) {
+                val album =
+                    api.libraryApi
+                        .getItem(itemId = itemId)
+                        .content
+                        .let { BaseItem(it, false) }
+                _state.update { it.copy(album = album) }
+            } else {
+                updateUserData(itemId, result)
+            }
         }
 
         fun play(
@@ -264,6 +292,76 @@ class AlbumViewModel
         ) {
             val songs = state.value.songs as ApiRequestPager<*>
             play(songs, startIndex, shuffled)
+        }
+
+        fun setWatched(
+            itemId: UUID,
+            played: Boolean,
+        ) = viewModelScope.launch(ExceptionHandler() + WholphinDispatchers.IO) {
+            val result = favoriteWatchManager.setWatched(itemId, played)
+            updateUserData(itemId, result)
+        }
+
+        private fun updateUserData(
+            itemId: UUID,
+            userData: UserItemDataDto,
+        ) {
+            state.value.let { state ->
+                // TODO better way to determine which list needs to be updated
+                // TODO this code is duplicated in ArtistViewModel too
+                val similar = state.similar.indexOfFirstOrNull { it.id == itemId }
+                if (similar != null) {
+                    Timber.v("Found %s in similar", itemId)
+                    val newItem =
+                        state.similar[similar].let {
+                            it.copy(data = it.data.copy(userData = userData))
+                        }
+                    _state.update {
+                        it.copy(
+                            similar =
+                                it.similar.toMutableList().apply {
+                                    set(similar, newItem)
+                                },
+                        )
+                    }
+                } else {
+                    val collection = state.collections.indexOfFirstOrNull { it.id == itemId }
+                    if (collection != null) {
+                        Timber.v("Found %s in collections", itemId)
+                        val newItem =
+                            state.collections[collection].let {
+                                it.copy(data = it.data.copy(userData = userData))
+                            }
+                        _state.update {
+                            it.copy(
+                                collections =
+                                    it.collections.toMutableList().apply {
+                                        set(collection, newItem)
+                                    },
+                            )
+                        }
+                    } else {
+                        val video = state.musicVideos.indexOfFirstOrNull { it.id == itemId }
+                        if (video != null) {
+                            Timber.v("Found %s in music videos", itemId)
+                            val newItem =
+                                state.musicVideos[video].let {
+                                    it.copy(data = it.data.copy(userData = userData))
+                                }
+                            _state.update {
+                                it.copy(
+                                    musicVideos =
+                                        it.musicVideos.toMutableList().apply {
+                                            set(video, newItem)
+                                        },
+                                )
+                            }
+                        } else {
+                            Timber.w("Could not find item to update: %s", itemId)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -290,27 +388,25 @@ suspend fun getBackdropItemForAlbum(
 }
 
 data class AlbumState(
-    val album: BaseItem?,
-    val isVariousArtists: Boolean,
-    val imageUrl: String?,
-    val songs: List<BaseItem?>,
-    val similar: List<BaseItem>,
-    val loading: LoadingState,
+    val album: BaseItem? = null,
+    val isVariousArtists: Boolean = false,
+    val imageUrl: String? = null,
+    val songs: List<BaseItem?> = emptyList(),
+    val collections: List<BaseItem> = emptyList(),
+    val similar: List<BaseItem> = emptyList(),
+    val loading: LoadingState = LoadingState.Pending,
     val initialSongIndex: Int? = null,
-    val musicVideos: List<BaseItem?> = emptyList(),
+    val musicVideos: List<BaseItem> = emptyList(),
     val extras: List<ExtrasItem> = emptyList(),
     val canDelete: Boolean = false,
-) {
-    companion object {
-        val EMPTY = AlbumState(null, false, null, emptyList(), emptyList(), LoadingState.Pending)
-    }
-}
+)
 
 private const val HEADER_ROW = 0
 private const val SONG_ROW = HEADER_ROW + 1
 private const val MUSIC_VIDEO_ROW = SONG_ROW + 1
 private const val EXTRAS_ROW = SONG_ROW + 1
-private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val COLLECTIONS_ROW = EXTRAS_ROW + 1
+private const val SIMILAR_ROW = COLLECTIONS_ROW + 1
 
 @Composable
 fun AlbumDetailsPage(
@@ -351,6 +447,25 @@ fun AlbumDetailsPage(
                 onDeleteItem = viewModel::deleteItem,
             )
         }
+    val itemDialogActions =
+        remember {
+            ContextMenuActions(
+                navigateTo = viewModel.navigationManager::navigateTo,
+                onShowOverview = {},
+                onClickWatch = viewModel::setWatched,
+                onClickFavorite = viewModel::setFavorite,
+                onClickAddPlaylist = { itemId ->
+                    playlistViewModel.loadPlaylists()
+                    showPlaylistDialog.makePresent(itemId)
+                },
+                onSendMediaInfo = viewModel.serverReportService::sendMediaReportFor,
+                onDeleteItem = viewModel::deleteItem,
+                onChooseVersion = { _, _ -> },
+                onChooseTracks = { },
+                onClearChosenStreams = {},
+            )
+        }
+
     when (val loading = state.loading) {
         is LoadingState.Error -> {
             ErrorMessage(loading, modifier)
@@ -582,6 +697,52 @@ fun AlbumDetailsPage(
                                 },
                                 onLongClickItem = { _, _ -> },
                                 modifier = Modifier.focusRequester(focusRequesters[EXTRAS_ROW]),
+                            )
+                        }
+                    }
+                    if (state.collections.isNotEmpty()) {
+                        item {
+                            ItemRow(
+                                title = stringResource(R.string.collections),
+                                items = state.collections,
+                                onClickItem = { index, item ->
+                                    position = RowColumn(COLLECTIONS_ROW, index)
+                                    viewModel.navigationManager.navigateTo(item.destination())
+                                },
+                                onLongClickItem = { index, item ->
+                                    position = RowColumn(COLLECTIONS_ROW, index)
+                                    showContextMenu =
+                                        ContextMenu.ForBaseItem(
+                                            fromLongClick = true,
+                                            item = item,
+                                            chosenStreams = null,
+                                            showGoTo = true,
+                                            showStreamChoices = false,
+                                            canDelete =
+                                                viewModel.canDelete(
+                                                    item,
+                                                    preferences.appPreferences,
+                                                ),
+                                            canRemoveContinueWatching = false,
+                                            canRemoveNextUp = false,
+                                            actions = itemDialogActions,
+                                        )
+                                },
+                                cardContent = { index, item, mod, onClick, onLongClick ->
+                                    SeasonCard(
+                                        item = item,
+                                        onClick = onClick,
+                                        onLongClick = onLongClick,
+                                        modifier = mod,
+                                        showImageOverlay = true,
+                                        imageHeight = Cards.height2x3,
+                                        imageWidth = Dp.Unspecified,
+                                    )
+                                },
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .focusRequester(focusRequesters[COLLECTIONS_ROW]),
                             )
                         }
                     }

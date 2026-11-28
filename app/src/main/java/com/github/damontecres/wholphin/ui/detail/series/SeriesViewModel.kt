@@ -28,6 +28,7 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.ItemRowFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.gt
 import com.github.damontecres.wholphin.ui.launchDefault
@@ -36,6 +37,7 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.lt
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.ApiRequestPager
 import com.github.damontecres.wholphin.util.BlockingList
 import com.github.damontecres.wholphin.util.DataLoadingState
@@ -233,6 +235,21 @@ class SeriesViewModel
                     viewModelScope.launchIO {
                         val extras = extrasService.getExtras(series.id)
                         _state.update { it.copy(extras = extras) }
+                    }
+                    viewModelScope.launchIO {
+                        try {
+                            val collections =
+                                api.libraryApi
+                                    .getItemCollections(
+                                        itemId = seriesId,
+                                        fields = SlimItemFields,
+                                    ).toBaseItems()
+                            _state.update { it.copy(collections = collections) }
+                        } catch (ex: CancellationException) {
+                            throw ex
+                        } catch (ex: Exception) {
+                            Timber.e(ex, "Error fetching collections for series %s", seriesId)
+                        }
                     }
                     if (state.value.similar.isEmpty()) {
                         viewModelScope.launchIO {
@@ -885,6 +902,7 @@ data class SeriesState(
     val extras: List<ExtrasItem> = emptyList(),
     val people: List<Person> = emptyList(),
     val similar: List<BaseItem> = emptyList(),
+    val collections: List<BaseItem> = emptyList(),
     val canDeleteSeries: Boolean = false,
     val peopleInEpisode: PeopleInItem = PeopleInItem(),
     val discovered: List<DiscoverItem> = emptyList(),

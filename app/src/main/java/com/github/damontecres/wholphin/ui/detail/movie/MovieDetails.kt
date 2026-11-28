@@ -210,7 +210,7 @@ fun MovieDetails(
                                 ),
                         )
                 },
-                onLongClickSimilar = { _, similar ->
+                onLongClickItem = { _, similar ->
                     showContextMenu =
                         ContextMenu.ForBaseItem(
                             fromLongClick = true,
@@ -283,7 +283,8 @@ private const val PEOPLE_ROW = HEADER_ROW + 1
 private const val TRAILER_ROW = PEOPLE_ROW + 1
 private const val CHAPTER_ROW = TRAILER_ROW + 1
 private const val EXTRAS_ROW = CHAPTER_ROW + 1
-private const val SIMILAR_ROW = EXTRAS_ROW + 1
+private const val COLLECTIONS_ROW = EXTRAS_ROW + 1
+private const val SIMILAR_ROW = COLLECTIONS_ROW + 1
 private const val DISCOVER_ROW = SIMILAR_ROW + 1
 
 @Composable
@@ -300,7 +301,7 @@ fun MovieDetailsContent(
     onClickItem: (Int, BaseItem) -> Unit,
     onClickPerson: (Person) -> Unit,
     onLongClickPerson: (Int, Person) -> Unit,
-    onLongClickSimilar: (Int, BaseItem) -> Unit,
+    onLongClickItem: (Int, BaseItem) -> Unit,
     onClickExtra: (Int, ExtrasItem) -> Unit,
     onClickDiscover: (Int, DiscoverItem) -> Unit,
     canDelete: Boolean,
@@ -438,6 +439,37 @@ fun MovieDetailsContent(
                     )
                 }
             }
+            state.collections.letNotEmpty { collections ->
+                item {
+                    ItemRow(
+                        title = stringResource(R.string.collections),
+                        items = collections,
+                        onClickItem = { index, item ->
+                            position = COLLECTIONS_ROW
+                            onClickItem.invoke(index, item)
+                        },
+                        onLongClickItem = { index, item ->
+                            position = COLLECTIONS_ROW
+                            onLongClickItem.invoke(index, item)
+                        },
+                        cardContent = { index, item, mod, onClick, onLongClick ->
+                            SeasonCard(
+                                item = item,
+                                onClick = onClick,
+                                onLongClick = onLongClick,
+                                modifier = mod,
+                                showImageOverlay = true,
+                                imageHeight = Cards.height2x3,
+                                imageWidth = Dp.Unspecified,
+                            )
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequesters[COLLECTIONS_ROW]),
+                    )
+                }
+            }
             state.similar.letNotEmpty { similar ->
                 item {
                     val imageHeight =
@@ -457,7 +489,7 @@ fun MovieDetailsContent(
                         },
                         onLongClickItem = { index, similar ->
                             position = SIMILAR_ROW
-                            onLongClickSimilar.invoke(index, similar)
+                            onLongClickItem.invoke(index, similar)
                         },
                         cardContent = { index, item, mod, onClick, onLongClick ->
                             SeasonCard(

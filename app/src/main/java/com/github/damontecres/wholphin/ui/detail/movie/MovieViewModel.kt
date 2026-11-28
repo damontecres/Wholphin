@@ -27,17 +27,20 @@ import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.services.deleteItem
 import com.github.damontecres.wholphin.ui.ItemRowFields
+import com.github.damontecres.wholphin.ui.SlimItemFields
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.showToast
+import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.DataLoadingState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,6 +160,22 @@ class MovieViewModel
                         it.copy(
                             discovered = results,
                         )
+                    }
+                }
+
+                viewModelScope.launchIO {
+                    try {
+                        val collections =
+                            api.libraryApi
+                                .getItemCollections(
+                                    itemId = itemId,
+                                    fields = SlimItemFields,
+                                ).toBaseItems()
+                        _state.update { it.copy(collections = collections) }
+                    } catch (ex: CancellationException) {
+                        throw ex
+                    } catch (ex: Exception) {
+                        Timber.e(ex, "Error fetching collections for movie %s", itemId)
                     }
                 }
 
@@ -299,6 +318,7 @@ data class MovieState(
     val extras: List<ExtrasItem> = emptyList(),
     val similar: List<BaseItem> = emptyList(),
     val discovered: List<DiscoverItem> = emptyList(),
+    val collections: List<BaseItem> = emptyList(),
     val chosenStreams: ChosenStreams? = null,
     val canDelete: Boolean = false,
 ) {
