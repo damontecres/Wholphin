@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,13 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.tv.material3.ListItem
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
+import com.github.damontecres.wholphin.data.filter.filterOptionsFor
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
@@ -40,14 +45,16 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ViewOptionImageType
 import com.github.damontecres.wholphin.ui.components.toAnnotatedString
-import com.github.damontecres.wholphin.ui.data.BoxSetSortOptions
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.getStringRes
+import com.github.damontecres.wholphin.ui.data.rememberSortOptions
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.preferences.PreferenceGroup
 import com.github.damontecres.wholphin.ui.preferences.PreferenceTitle
+import com.github.damontecres.wholphin.ui.preferences.StringInput
+import com.github.damontecres.wholphin.ui.preferences.StringInputDialog
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -62,6 +69,7 @@ fun HomeRowSettings(
     onConfigChange: (HomeRowConfig) -> Unit,
     onConfigAction: (HomeRowConfigAction) -> Unit,
     onApplyApplyAll: () -> Unit,
+    libraries: List<Library>,
     modifier: Modifier = Modifier,
     defaultViewOptions: HomeRowViewOptions = HomeRowViewOptions(),
 ) {
@@ -125,6 +133,7 @@ fun HomeRowSettings(
             }
             addAdditionalConfig(
                 config = config,
+                libraries = libraries,
                 onConfigChange = onConfigChange,
                 onConfigAction = onConfigAction,
             )
@@ -134,6 +143,7 @@ fun HomeRowSettings(
 
 private fun LazyListScope.addAdditionalConfig(
     config: HomeRowConfig,
+    libraries: List<Library>,
     onConfigChange: (HomeRowConfig) -> Unit,
     onConfigAction: (HomeRowConfigAction) -> Unit,
 ) {
@@ -159,7 +169,52 @@ private fun LazyListScope.addAdditionalConfig(
         }
 
         is HomeRowConfig.ByParent -> {
+            val library = libraries.firstOrNull { it.itemId == config.parentId }
             item {
+                var showDialog by remember { mutableStateOf(false) }
+                val title = config.title ?: library?.name ?: stringResource(R.string.unknown)
+                ListItem(
+                    selected = false,
+                    onClick = { showDialog = true },
+                    headlineContent = {
+                        PreferenceTitle(stringResource(R.string.title))
+                    },
+                    supportingContent = {
+                        Text(
+                            text = title,
+                        )
+                    },
+                )
+                if (showDialog) {
+                    StringInputDialog(
+                        input =
+                            StringInput(
+                                title = stringResource(R.string.title),
+                                value = title,
+                                keyboardOptions =
+                                    KeyboardOptions(
+                                        capitalization = KeyboardCapitalization.Words,
+                                        autoCorrectEnabled = true,
+                                        keyboardType = KeyboardType.Text,
+                                    ),
+                                onSubmit = { title ->
+                                    onConfigChange.invoke(config.copy(title = title))
+                                    showDialog = false
+                                },
+                                maxLines = 1,
+                                confirmDiscard = false,
+                            ),
+                        onSave = { title ->
+                            onConfigChange.invoke(config.copy(title = title))
+                            showDialog = false
+                        },
+                        onDismissRequest = { showDialog = false },
+                        elevation = 3.dp,
+                    )
+                }
+            }
+            item {
+                val sortOptions = rememberSortOptions(library?.collectionType)
                 val sortAndDirection =
                     remember(config) {
                         config.sort ?: SortAndDirection(
@@ -192,6 +247,7 @@ private fun LazyListScope.addAdditionalConfig(
                         }
                         ByParentSortDialogContent(
                             current = sortAndDirection,
+                            sortOptions = sortOptions,
                             onClick = {
                                 val newSort =
                                     if (config.sort?.sort == it) {
@@ -209,6 +265,37 @@ private fun LazyListScope.addAdditionalConfig(
                     }
                 }
             }
+            item {
+                var showDialog by remember { mutableStateOf(false) }
+                val filterOptions = filterOptionsFor(library?.collectionType)
+                val filterCount = config.filter.countFilters(filterOptions)
+                ListItem(
+                    selected = false,
+                    onClick = { showDialog = true },
+                    headlineContent = {
+                        PreferenceTitle(stringResource(R.string.filter))
+                    },
+                    supportingContent = {
+                        Text(
+                            text =
+                                if (filterCount > 0) {
+                                    pluralStringResource(R.plurals.filters, filterCount, filterCount)
+                                } else {
+                                    stringResource(R.string.none)
+                                },
+                        )
+                    },
+                )
+                ByParentFilterDialog(
+                    show = showDialog,
+                    library = library,
+                    current = config.filter,
+                    onDismissRequest = { showDialog = false },
+                    onFilterChange = { newFilter ->
+                        onConfigChange.invoke(config.copy(filter = newFilter))
+                    },
+                )
+            }
         }
 
         else -> {}
@@ -218,6 +305,7 @@ private fun LazyListScope.addAdditionalConfig(
 @Composable
 fun ByParentSortDialogContent(
     current: SortAndDirection,
+    sortOptions: List<ItemSortBy>,
     onClick: (ItemSortBy) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -225,7 +313,7 @@ fun ByParentSortDialogContent(
         contentPadding = PaddingValues(8.dp),
         modifier = modifier,
     ) {
-        items(BoxSetSortOptions) { sort ->
+        items(sortOptions) { sort ->
             ListItem(
                 selected = sort == current.sort,
                 onClick = { onClick.invoke(sort) },

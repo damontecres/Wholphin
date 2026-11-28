@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.data.filter
 import androidx.annotation.StringRes
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
+import org.jellyfin.sdk.model.api.CollectionType
 import java.util.UUID
 
 val DefaultFilterOptions =
@@ -75,6 +76,13 @@ val DefaultPlaylistItemsOptions =
         YearFilter,
         DecadeFilter,
     )
+
+fun filterOptionsFor(collectionType: CollectionType?) =
+    when (collectionType) {
+        CollectionType.TVSHOWS -> DefaultTvFilterOptions
+        CollectionType.PLAYLISTS -> DefaultPlaylistItemsOptions
+        else -> DefaultFilterOptions
+    }
 
 /**
  * Abstract way to filter data
