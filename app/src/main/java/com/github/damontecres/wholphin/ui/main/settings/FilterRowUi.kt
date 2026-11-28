@@ -103,6 +103,7 @@ fun ByParentFilterDialog(
                 library = library,
                 current = current,
                 onFilterChange = onFilterChange,
+                onDismissRequest = onDismissRequest,
             )
         }
     }
@@ -113,6 +114,7 @@ fun ByParentFilterDialogContent(
     library: Library?,
     current: GetItemsFilter,
     onFilterChange: (GetItemsFilter) -> Unit,
+    onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ByParentFilterViewModel =
         hiltViewModel<ByParentFilterViewModel, ByParentFilterViewModel.Factory>(
@@ -137,6 +139,7 @@ fun ByParentFilterDialogContent(
                     selected = false,
                     onClick = {
                         onFilterChange.invoke(current.delete(filterOptions))
+                        onDismissRequest.invoke()
                     },
                     leadingContent = {
                         Icon(
